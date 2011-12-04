@@ -1,0 +1,39 @@
+------------------------------------------------------
+Device Aware
+SilverStripe module
+by Thierry Francois : colmyba.com
+------------------------------------------------------
+
+------------------------------------------------------
+DETAILS
+------------------------------------------------------
+Adds mobile functionlaities:
+- detection
+- template functions
+- resolutions
+
+Device resolution tools
+- default device resolution (classic and mobile)
+- save current visitor's resolution
+
+Image manipulation
+- image resizing depending on device/visitor resolution
+- pre-generated images (cache)
+
+All configured through _config.php
+
+------------------------------------------------------
+INSTALL
+------------------------------------------------------
+copy folder in your SS install. Run dev/build/
+
+------------------------------------------------------
+CONFIG
+------------------------------------------------------
+Open _config.php
+Add/remove extensions as required
+Reset defaults if required
+Set cache config
+
+
+...Full manual in a bit...
