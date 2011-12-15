@@ -46,18 +46,37 @@ class DeviceAwareImage extends DataObjectDecorator
         return $this->deviceOptimizedImage( 'height', NULL, $ratio, NULL );
     }
     
-    public function deviceOptimizedImage ( $direction = 'width', $calculation = 'average', $ratio = 1, $quality = 'auto' )
-    {     
-        $targetResolution = DeviceAware::getCurrentScreenResolution();
-        $mobileDevices = Session::get('mobileDevices');                
-        if ( !$mobileDevices )
+    public function deviceOptimizedImageHeightByWidthRatio($ratio = 1)
+    {
+        $screenResolution = DeviceAware::getCurrentScreenResolution();   
+        if ( !$screenResolution )
         {
-            DeviceAware::initMobileDeviceAware();                
-            $mobileDevices = Session::get('mobileDevices');
+            if ( $mobileDevices['isMobile'] )
+            {
+                $screenResolution = DeviceAware::getMobileDeviceResolution( $mobileDevices['current'], $calculation );
+            }else{
+                $screenResolution = DeviceAware::$defaultScreenResolution;
+            }
         }
-
+        
+        $targetWidth = $screenResolution[0] * $ratio;
+        
+        $this->setImageJpegQuality();
+        return $this->getFormattedDeviceAwareImage('SetHeight', $targetWidth);
+    }
+    
+    
+    public function setImageJpegQuality($quality = 'auto')
+    {
         if ( $quality == 'auto' )
         {
+            $mobileDevices = Session::get('mobileDevices');                
+            if ( !$mobileDevices )
+            {
+                DeviceAware::initMobileDeviceAware();                
+                $mobileDevices = Session::get('mobileDevices');
+            }
+            
             if ( !$mobileDevices )
             {
                 GD::set_default_quality(80);                
@@ -68,6 +87,22 @@ class DeviceAwareImage extends DataObjectDecorator
         }else{
             GD::set_default_quality($quality);
         }
+    }
+    
+    /**
+     * Return new Image resized to a ratio of the screen resolution
+     * 
+     * @param String $direction
+     * @param String $calculation
+     * @param Int/Float $ratio Resolutiona ratio from 0 to 1
+     * @param String/Int $quality JPEG quality auto or 0 to 100 (auto 65 for mobile and 80 for screen)
+     * @return Image/Boolean Image object or FALSE
+     */
+    
+    public function deviceOptimizedImage ( $direction = 'width', $calculation = 'average', $ratio = 1, $quality = 'auto' )
+    {     
+        $targetResolution = DeviceAware::getCurrentScreenResolution();
+        $this->setImageJpegQuality($quality);
         
         if ( !$targetResolution )
         {
