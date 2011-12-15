@@ -34,18 +34,6 @@ class DeviceAwarePage_Controller extends Extension
         if ( isset($_GET['isDev']) ) DeviceAware::initMobileDeviceAware();        
     }
     
-    public function isMobile()
-    {       
-        
-        $mobileDevices = Session::get('mobileDevices');
-        if ( !$mobileDevices )
-        {
-            DeviceAware::initMobileDeviceAware();
-            $mobileDevices = Session::get('mobileDevices');
-        }
-        return $mobileDevices['isMobile'];         
-    }
-    
     public function saveScreenResolution( $data )
     {                       
         $resolution = FALSE;
@@ -60,6 +48,75 @@ class DeviceAwarePage_Controller extends Extension
         }else{
             echo 'fail';
         }
-    }    
+    } 
+    
+    /* ************************************************************************
+     * TEMPLATES HELPER FUNCTIONS
+     */
+    
+    public function isMobile()
+    {       
+        
+        $mobileDevices = Session::get('mobileDevices');
+        if ( !$mobileDevices )
+        {
+            DeviceAware::initMobileDeviceAware();
+            $mobileDevices = Session::get('mobileDevices');
+        }
+        return $mobileDevices['isMobile'];         
+    }
+    
+    public function isClassicDevice()
+    {          
+        return !$this->isMobile();         
+    }
+    
+    public function screenWidth()
+    {
+        $screenResolution = Session::get('screenResolution');
+        if ( !$screenResolution )
+        {
+            $screenResolution = DeviceAware::$defaultScreenResolution;
+        }
+        
+        return $screenResolution[0];
+    }
+    
+    public function screenWidth1920()
+    {
+        if ( $this->screenWidth() == 1920 ) return TRUE;
+        else return FALSE;
+    }
+    
+    public function screenWidth1680()
+    {
+        if ( $this->screenWidth() == 1680 ) return TRUE;
+        else return FALSE;
+    }
+    
+    public function screenWidth1600()
+    {
+        if ( $this->screenWidth() == 1600 ) return TRUE;
+        else return FALSE;
+    }
+    
+    public function screenWidth1440()
+    {
+        if ( $this->screenWidth() == 1440 ) return TRUE;
+        else return FALSE;
+    }
+    
+    public function screenWidth1280()
+    {
+        if ( $this->screenWidth() == 1280 ) return TRUE;
+        else return FALSE;
+    }
+    
+    public function screenWidth1024()
+    {
+        if ( $this->screenWidth() == 1024 ) return TRUE;
+        else return FALSE;
+    }
+       
 }
 ?>

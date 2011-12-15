@@ -60,11 +60,11 @@ DeviceAware::$cachedMobileDevices = array('iPhone','android');
  * or checkout: http://en.wikipedia.org/wiki/Display_resolution
  */
 DeviceAware::$screenResolutions = array(
-    array(1024, 768),
     array(1280, 1024),
-    array(1600, 1200),
     array(1440, 900),
-    array(1920, 1080)
+    array(1680, 1050),
+    array(1920, 1080),
+    array(1920, 1200)
 );
 
 /*
@@ -74,27 +74,27 @@ DeviceAware::$screenResolutions = array(
 DeviceAware::$usedResolutionRatios = array(
     'Project' => array(
         'fields' => array(
-            'CoverImageID' => array(
+            'CoverID' => array(
                 'classic' => array(
-                    'width' => array(0.486, 0.238, 0.155) //as used in template
+                    'width' => array() //as used in template
                 ),
                 'mobile' => array(
-                    'width' => array(0.9, 0.441, 0.288)
+                    'width' => array()
                 )
             )
         ),
         'objects' => array(
-            'ImagePiece' => array(
-                'foreignKey' => 'ProjectPageID',
+            'Snapshot' => array(
+                'foreignKey' => 'ProjectID',
                 'fields' => array(
-                    'ImageFileID' => array(
+                    'ImageID' => array(
                         'classic' => array(
-                            'width' => array(0.9, 0.486), //as used in template
-                            'height' => array(0.9, 0.37) //as used in template
+                            'width' => array(), //as used in template
+                            'height' => array() //as used in template
                         ),
                         'mobile' => array(
-                            'width' => array(0.9, 0.486), //as used in template
-                            'height' => array(0.9, 0.37) //as used in template
+                            'width' => array(), //as used in template
+                            'height' => array() //as used in template
                         )
                     )
                 )
