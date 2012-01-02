@@ -49,45 +49,35 @@ class DeviceAwareImage extends DataObjectDecorator
     public function deviceOptimizedImageHeightByWidthRatio($ratio = 1)
     {
         $screenResolution = DeviceAware::getCurrentScreenResolution();   
-        if ( !$screenResolution )
-        {
-            if ( $mobileDevices['isMobile'] )
-            {
-                $screenResolution = DeviceAware::getMobileDeviceResolution( $mobileDevices['current'], $calculation );
-            }else{
-                $screenResolution = DeviceAware::$defaultScreenResolution;
-            }
-        }
+        if ( !$screenResolution ) return $this;
         
-        $targetWidth = $screenResolution[0] * $ratio;
-        
-        $this->setImageJpegQuality();
+        $targetWidth = $screenResolution[0] * $ratio;        
+        //$this->setImageJpegQuality();
         return $this->getFormattedDeviceAwareImage('SetHeight', $targetWidth);
     }
     
-    
+    /*
     public function setImageJpegQuality($quality = 'auto')
     {
+        $time_start = microtime(true);
+        
         if ( $quality == 'auto' )
         {
-            $mobileDevices = Session::get('mobileDevices');                
-            if ( !$mobileDevices )
-            {
-                DeviceAware::initMobileDeviceAware();                
-                $mobileDevices = Session::get('mobileDevices');
-            }
+            $mobileDevices = DeviceAware::getSessionMobileDevicesData();
             
             if ( !$mobileDevices )
             {
-                GD::set_default_quality(80);                
+                GD::set_default_quality(85);                
             }else{
                 if ( $mobileDevices['isMobile'] ) GD::set_default_quality(65);
-                else GD::set_default_quality(80);
+                else GD::set_default_quality(85);
             }
         }else{
             GD::set_default_quality($quality);
         }
-    }
+        
+        print_r( microtime(true)-$time_start . ' : setImageJpegQuality'. '<br/>' ."\r\n");
+    }*/
     
     /**
      * Return new Image resized to a ratio of the screen resolution
@@ -101,21 +91,13 @@ class DeviceAwareImage extends DataObjectDecorator
     
     public function deviceOptimizedImage ( $direction = 'width', $calculation = 'average', $ratio = 1, $quality = 'auto' )
     {     
-        $targetResolution = DeviceAware::getCurrentScreenResolution();
-        $this->setImageJpegQuality($quality);
         
-        if ( !$targetResolution )
-        {
-            if ( $mobileDevices['isMobile'] )
-            {
-                $targetResolution = DeviceAware::getMobileDeviceResolution( $mobileDevices['current'], $calculation );
-            }else{
-                $targetResolution = DeviceAware::$defaultScreenResolution;
-            }
-        }
-                
+        $targetResolution = DeviceAware::getCurrentScreenResolution();        
+                        
         if ( $targetResolution )
         {
+            //$this->setImageJpegQuality($quality);
+            
             if ( $ratio != 1 )
             {
                 $targetResolution[0] = $targetResolution[0] * $ratio;
@@ -132,12 +114,14 @@ class DeviceAwareImage extends DataObjectDecorator
                     $newImage = $this->getFormattedDeviceAwareImage('SetWidth', $targetResolution[0]);
                     break;
             }
-
+            
             return $newImage;
 
         }else{
-            return FALSE;
+            return $this;
         }
+        
+        
     }
     
     /**
@@ -149,45 +133,32 @@ class DeviceAwareImage extends DataObjectDecorator
 	 * @param string $arg2 A second argument to pass to the generate function.
 	 * @return Image_Cached
 	 */
-	function getFormattedDeviceAwareImage($format, $arg1 = null, $arg2 = null) {
-		if($this->owner->ID && $this->owner->Filename && Director::fileExists($this->owner->Filename)) {
-            
-            $returnOriginal = FALSE;
-            
-            if ( !$arg1 || $arg1 == 0 )
-            {
-              $defaultResolution = DeviceAware::getDefaultResolution();
-              if ( !$defaultResolution )
-              {
-                $returnOriginal = TRUE;
-              }else{
-                if ($format == 'SetWidth') $arg1 = $defaultResolution[0];
-                else $arg1 = $defaultResolution[1];
-              }
-            }
+	function getFormattedDeviceAwareImage($format, $arg1 = null, $arg2 = null)
+    {        
+		if($this->owner->ID && $this->owner->Filename && Director::fileExists($this->owner->Filename))
+        {                        
+            if ( !$arg1 || $arg1 == 0 ) return $this->owner;
                                                
             if ( !DeviceAware::$overSampleImages )
             {
                 $gd = new GD(Director::baseFolder()."/" . $this->owner->Filename);
-                if ( $format == 'SetWidth' && $gd->getWidth() <= $arg1 ) $returnOriginal = TRUE;
-                if ( $format == 'SetHeight' && $gd->getHeight() <= $arg1 ) $returnOriginal = TRUE;
+                if ( $format == 'SetWidth' && $gd->getWidth() <= $arg1 ) return $this->owner;
+                if ( $format == 'SetHeight' && $gd->getHeight() <= $arg1 ) return $this->owner;
             }            
-            
-            if ( $returnOriginal )
+                        
+            $cacheFile = $this->deviceAwareCacheFilename($format, $arg1, $arg2);
+
+            if(!file_exists(Director::baseFolder()."/".$cacheFile) || isset($_GET['flush']))
             {
-                return $this->owner;
-            }else{
-                $cacheFile = $this->deviceAwareCacheFilename($format, $arg1, $arg2);
-
-                if(!file_exists(Director::baseFolder()."/".$cacheFile) || isset($_GET['flush'])) {
-                    $this->generateFormattedDeviceAwareImage($format, $arg1, $arg2);
-                }
-
-                $cached = new Image_Cached($cacheFile);
-                // Pass through the title so the templates can use it
-                $cached->Title = $this->owner->Title;
-                return $cached;
+                //$this->generateFormattedDeviceAwareImage($format, $arg1, $arg2);
+                $this->generateFormattedDeviceAwareImage($format, $cacheFile, $arg1, $arg2);
             }
+
+            $cached = new Image_Cached($cacheFile);
+            // Pass through the title so the templates can use it
+            $cached->Title = $this->owner->Title;
+            
+            return $cached;
 		}
 	}
     
@@ -200,20 +171,16 @@ class DeviceAwareImage extends DataObjectDecorator
 	 * @return string
 	 */
     
-	function deviceAwareCacheFilename($format, $arg1 = null, $arg2 = null) {		        
+	function deviceAwareCacheFilename($format, $arg1 = null, $arg2 = null)
+    {		        
         $folder = $this->owner->ParentID ? $this->owner->Parent()->Filename : ASSETS_DIR . "/";
 		
-		$format = $format.$arg1.$arg2;        
-        $mobileDevices = Session::get('mobileDevices');
-        if ( !$mobileDevices )
-        {
-            DeviceAware::initMobileDeviceAware();
-            $mobileDevices = Session::get('mobileDevices');
-        }
+		$format = $format.$arg1.$arg2;
+        $mobileDevices = DeviceAware::getSessionMobileDevicesData();        
         if ( $mobileDevices['isMobile'] ) $format .= '-mobile';
         //if ( $mobileDevices['advanced'] ) $format .= '-advanced';
-		        
-		return $folder . "_resampled/$format-" . $this->owner->Name;
+		                
+		return $folder . "_resampled/device_aware/$format-" . $this->owner->Name;
 	}
     
     /**
@@ -224,24 +191,29 @@ class DeviceAwareImage extends DataObjectDecorator
 	 * @param string $arg1 Argument to pass to the generate method.
 	 * @param string $arg2 A second argument to pass to the generate method.
 	 */
-	function generateFormattedDeviceAwareImage($format, $arg1 = null, $arg2 = null) {
-		$cacheFile = $this->deviceAwareCacheFilename($format, $arg1, $arg2);
-	
-		$gd = new GD(Director::baseFolder()."/" . $this->owner->Filename);
-		
-		
-		if($gd->hasGD()){
-			$generateFunc = "generate$format";		
-			if($this->owner->hasMethod($generateFunc)){
-				$gd = $this->owner->$generateFunc($gd, $arg1, $arg2);
-				if($gd){
-					$gd->writeTo(Director::baseFolder()."/" . $cacheFile);
-				}
-	
-			} else {
-				USER_ERROR("DeviceAwareImage::generateFormattedDeviceAwareImage - Image $format function not found.",E_USER_WARNING);
-			}
-		}
+	//function generateFormattedDeviceAwareImage($format, $arg1 = null, $arg2 = null)
+    function generateFormattedDeviceAwareImage($format, $cacheFile, $arg1, $arg2)
+    {        
+		//$cacheFile = $this->deviceAwareCacheFilename($format, $arg1, $arg2);
+        if ($cacheFile)
+        {
+            $gd = new GD(Director::baseFolder()."/" . $this->owner->Filename);		
+
+            if($gd->hasGD())
+            {
+                $isJpegQualitySet = Session::get('deviceAwareGDJpegQualitySet');
+                if (!$isJpegQualitySet) DeviceAware::setImageJpegQuality();
+                
+                $generateFunc = "generate$format";		
+                if($this->owner->hasMethod($generateFunc))
+                {
+                    $gd = $this->owner->$generateFunc($gd, $arg1, $arg2);
+                    if($gd) $gd->writeTo(Director::baseFolder()."/".$cacheFile);
+                } else {
+                    USER_ERROR("DeviceAwareImage::generateFormattedDeviceAwareImage - Image $format function not found.",E_USER_WARNING);
+                }
+            }
+        }
 	}
     
 }

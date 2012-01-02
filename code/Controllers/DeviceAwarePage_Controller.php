@@ -23,15 +23,10 @@ class DeviceAwarePage_Controller extends Extension
 	);
     
     public function onBeforeInit()
-    {/*
-        $mobileDevices = Session::get('mobileDevices');
-        if ( !$mobileDevices )
-        {*/
-            DeviceAware::initMobileDeviceAware();
-            $mobileDevices = Session::get('mobileDevices');
-        /*}*/
+    {        
+        $mobileDevices = DeviceAware::getSessionMobileDevicesData();
         
-        if ( isset($_GET['isDev']) ) DeviceAware::initMobileDeviceAware();        
+        //if ( isset($_GET['isDev']) ) DeviceAware::initMobileDeviceAware();        
     }
     
     public function saveScreenResolution( $data )
@@ -55,14 +50,8 @@ class DeviceAwarePage_Controller extends Extension
      */
     
     public function isMobile()
-    {       
-        
-        $mobileDevices = Session::get('mobileDevices');
-        if ( !$mobileDevices )
-        {
-            DeviceAware::initMobileDeviceAware();
-            $mobileDevices = Session::get('mobileDevices');
-        }
+    {               
+        $mobileDevices = DeviceAware::getSessionMobileDevicesData();
         return $mobileDevices['isMobile'];         
     }
     
@@ -82,6 +71,13 @@ class DeviceAwarePage_Controller extends Extension
         }
         
         return $screenResolution[0];
+    }
+    
+    public function isUsingDefaultResolution()
+    {
+        $screenResolution = Session::get('screenResolution');
+        if ( !$screenResolution ) return TRUE;
+        else return FALSE;
     }
     
     //-------------------------------------------------------------------------
@@ -196,6 +192,13 @@ class DeviceAwarePage_Controller extends Extension
     {
         if ( $this->screenWidth() >= 1024 ) return TRUE;
         else return FALSE;
+    }
+    
+    //-------------------------------------------------------------------------
+    
+    public function getWidthFromScreenRatio($ratio = 1)
+    {
+        return $this->screenWidth() * $ratio;
     }
 }
 ?>

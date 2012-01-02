@@ -46,6 +46,8 @@ class DeviceAware
     );    
     public static $defaultScreenResolution = array(1600, 1200);
     
+    public static $classicDeviesJPGImageQuality = 85;
+    public static $mobileDeviesJPGImageQuality = 65;
     
     public static $usedResolutionRatios = array(); //set through config and defines what to pre-generate
     public static $cachedMobileDevices = array(); //set through config and defines which mobile device to pre-generate images for
@@ -88,6 +90,22 @@ class DeviceAware
         Session::set('mobileDevices', $mobileDevices);
     }
     
+    /**
+     * Return the prviously stored mobile detection data from the Session
+     * and will init the Session data if not already set
+     * 
+     * @return array mobile detection data
+     */
+    public function getSessionMobileDevicesData()
+    {        
+        $mobileDevices = Session::get('mobileDevices');
+        if ( !$mobileDevices )
+        {
+            self::initMobileDeviceAware();
+            $mobileDevices = Session::get('mobileDevices');
+        }        
+        return $mobileDevices;
+    }
     
     /**
 	 * Returns a specific mobile device or the current mobile device resolution
@@ -100,22 +118,10 @@ class DeviceAware
     {        
         if ( !$device )
         {
-            $mobileDevices = Session::get('mobileDevices');
-            if ( !$mobileDevices)
-            {
-                self::initMobileDeviceAware();
-            }else{
-                if ( !$mobileDevices['isMobile'] ) return FALSE;
-            }
+            $mobileDevices = DeviceAware::getSessionMobileDevicesData();
+            if ( !$mobileDevices['isMobile'] ) return FALSE;
             
-            foreach ( $mobileDevices as $model => $active )
-            {
-                if ( $active )
-                {
-                    $device = $model;
-                    break;
-                }
-            }        
+            $device = $mobileDevices['current'];
         }        
         
         if ( $device && $device != 'isMobile' && $device != 'advanced' )
@@ -142,6 +148,7 @@ class DeviceAware
                         break;
                         
                     case 'average':
+                    default:
                             $resolution = array(
                                 ($resolution['short'][0] + $resolution['short'][1]) / 2,
                                 ($resolution['long'][0] + $resolution['long'][1]) / 2,
@@ -165,12 +172,23 @@ class DeviceAware
      */
     public function getCurrentScreenResolution ()
     {
-        //return Session::get('screenResolution');
+        $resolution = FALSE;    
         
         $userScreenResolution = Session::get('screenResolution');
-        if ( $userScreenResolution ) return $userScreenResolution;
-        else return self::getDefaultResolution();
         
+        if ( $userScreenResolution )
+        {
+            $resolution = $userScreenResolution;
+        }else{
+            $mobileDevices = DeviceAware::getSessionMobileDevicesData();
+            if ( $mobileDevices['isMobile'] )
+            {
+                $resolution = self::getMobileDeviceResolution( $mobileDevices['current'] );
+            }
+        }
+            
+        if (!$resolution) return self::getDefaultResolution();
+        else return $resolution;        
     }   
     
     /**
@@ -181,15 +199,39 @@ class DeviceAware
      */
     public function getDefaultResolution()
     {
-        $mobileDevices = Session::get('mobileDevices');                
-        if ( !$mobileDevices )
-        {
-            DeviceAware::initMobileDeviceAware();                
-            $mobileDevices = Session::get('mobileDevices');
-        }
+        $mobileDevices = DeviceAware::getSessionMobileDevicesData();
+        
         if ( $mobileDevices['isMobile'] ) return self::$defaultMobileResolution;
         else return self::$defaultScreenResolution;
     } 
+    
+    /**
+     * Sets GD Jpeg image quality to a specific value 
+     * or to different defaults for mobile and classic devices
+     * 
+     * @param string|int $quality GD Jpeg image quality
+     * @return void
+     */
+    public function setImageJpegQuality($quality = 'auto')
+    {        
+        if ( $quality == 'auto' )
+        {
+            $mobileDevices = self::getSessionMobileDevicesData();
+            
+            if ( !$mobileDevices )
+            {
+                GD::set_default_quality(self::$classicDeviesJPGImageQuality);                
+            }else{
+                if ( $mobileDevices['isMobile'] ) GD::set_default_quality(self::$mobileDeviesJPGImageQuality);
+                else GD::set_default_quality(self::$classicDeviesJPGImageQuality);
+            }
+        }else{
+            GD::set_default_quality($quality);
+        }
+        
+        Session::set('deviceAwareGDJpegQualitySet', TRUE);
+    }
+    
     
     /**
      * Generates resized images in relation to the configured cache setting
@@ -286,9 +328,9 @@ class DeviceAware
                     {                        
                         if ( $device == 'classic' )
                         {
-                            $mobileDevices['isMobile'] = FALSE;
-                            Session::set('mobileDevices', $mobileDevices);
-                            GD::set_default_quality(80);
+                            //$mobileDevices['isMobile'] = FALSE;
+                            //Session::set('mobileDevices', $mobileDevices);
+                            GD::set_default_quality(self::$classicDeviesJPGImageQuality);
                             
                             if ($verbose) echo '<br/>'.'Classic devices: '.'<br/>';
                             
@@ -317,9 +359,9 @@ class DeviceAware
                         
                         if ( $device == 'mobile' )
                         {
-                            $mobileDevices['isMobile'] = TRUE;
-                            Session::set('mobileDevices', $mobileDevices);
-                            GD::set_default_quality(65);
+                            //$mobileDevices['isMobile'] = TRUE;
+                            //Session::set('mobileDevices', $mobileDevices);
+                            GD::set_default_quality(self::$mobileDeviesJPGImageQuality);
                             
                             if ($verbose) echo '<br/>'.'Mobile devices: '.'<br/>';
                             
