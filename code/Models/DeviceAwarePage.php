@@ -21,10 +21,11 @@ class DeviceAwarePage extends SiteTreeDecorator
     public function onAfterPublish( &$original)
     {
         /**
-         * Images are cached when the page is published. This will take some time
-         * so better be sure it is the images we want published
+         * Images are cached when the page is published. (This will take some time
+         * so better be sure it is the images we want published)
+         * TODO: add condition > allow to configure on a per page basis which ones are cached
          */
-        DeviceAware::generateDeviceSpecificCachedImages($this->owner->ClassName, $this->owner->ID);
+        DeviceAwareCache::generateCache($this->owner->ClassName, $this->owner->ID);
     } 
 }
 ?>

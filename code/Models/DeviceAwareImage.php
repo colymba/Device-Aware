@@ -17,24 +17,7 @@
  */
 class DeviceAwareImage extends DataObjectDecorator
 {
-    /*
-    function extraStatics()
-    {
-        return array(
-            'db' => array(
-                'usedResolutionWidthRatios' => 'Text',
-                'usedResolutionHeightRatios' => 'Text',
-            )
-        );
-    }
-    */
-    /*
-    public function onAfterWrite ()
-    {
-        parent::onAfterWrite();
-    }
-    */
-    
+    public static $overSampleImages = FALSE; //decides if small image will be scaled up for high resolutions     
     
     public function deviceOptimizedImageWidthByRatio($ratio = 1)
     {        
@@ -139,7 +122,7 @@ class DeviceAwareImage extends DataObjectDecorator
         {                        
             if ( !$arg1 || $arg1 == 0 ) return $this->owner;
                                                
-            if ( !DeviceAware::$overSampleImages )
+            if ( !self::$overSampleImages )
             {
                 $gd = new GD(Director::baseFolder()."/" . $this->owner->Filename);
                 if ( $format == 'SetWidth' && $gd->getWidth() <= $arg1 ) return $this->owner;
@@ -176,8 +159,8 @@ class DeviceAwareImage extends DataObjectDecorator
         $folder = $this->owner->ParentID ? $this->owner->Parent()->Filename : ASSETS_DIR . "/";
 		
 		$format = $format.$arg1.$arg2;
-        $mobileDevices = DeviceAware::getSessionMobileDevicesData();        
-        if ( $mobileDevices['isMobile'] ) $format .= '-mobile';
+        //$mobileDevices = DeviceAware::getSessionMobileDevicesData();        
+        //if ( $mobileDevices['isMobile'] ) $format .= '-mobile';
         //if ( $mobileDevices['advanced'] ) $format .= '-advanced';
 		                
 		return $folder . "_resampled/device_aware/$format-" . $this->owner->Name;
@@ -216,5 +199,26 @@ class DeviceAwareImage extends DataObjectDecorator
         }
 	}
     
+    /*
+     * HELPERS FOR TEMPLATES
+     */
+    
+    public function isPortrait()
+    {
+        if ( $this->owner->getOrientation() == Image::ORIENTATION_PORTRAIT ) return TRUE;
+        else return FALSE;
+    }
+    
+    public function isSquare()
+    {
+        if ( $this->owner->getOrientation() == Image::ORIENTATION_SQUARE ) return TRUE;
+        else return FALSE;
+    }
+    
+    public function isLandscape()
+    {
+        if ( $this->owner->getOrientation() == Image::ORIENTATION_LANDSCAPE ) return TRUE;
+        else return FALSE;
+    }
 }
 ?>

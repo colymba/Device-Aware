@@ -41,7 +41,10 @@ class DeviceAwareDev_Controller extends Controller
         $classID = Director::URLParam('ID');
         
         //if URLParams use this        
-        DeviceAware::generateDeviceSpecificCachedImages($className, $classID, TRUE);
+        //DeviceAware::generateDeviceSpecificCachedImages($className, $classID, TRUE);
+        DeviceAwareCache::$verbose = TRUE;
+        DeviceAwareCache::generateCache($className, $classID);
+        DeviceAwareCache::$verbose = FALSE;
         
         //get config
         //loop though classes

@@ -15,6 +15,10 @@
  * 
  * @requires MobileBrowserDetector by Silverstripe
  */
+
+ /**
+  * TODO: test cookie instead of session
+  */
 class DeviceAware
 {
     public static $mobileDevicesResolutions = array(
@@ -34,24 +38,10 @@ class DeviceAware
         ),
         'palm' => array(240, 320)
     );    
-    public static $defaultMobileResolution = array(480, 800);
-    
-    
-    public static $screenResolutions = array(
-        array(800, 600),
-        array(1024, 768),
-        array(1280, 1024),
-        array(1600, 1200),
-        array(1920, 1080)
-    );    
+    public static $defaultMobileResolution = array(480, 800);        
     public static $defaultScreenResolution = array(1600, 1200);
     
-    public static $classicDeviesJPGImageQuality = 85;
-    public static $mobileDeviesJPGImageQuality = 65;
-    
-    public static $usedResolutionRatios = array(); //set through config and defines what to pre-generate
-    public static $cachedMobileDevices = array(); //set through config and defines which mobile device to pre-generate images for
-    public static $overSampleImages = FALSE; //decides if small image will be scaled up for high resolutions    
+    public static $JPGImageQuality = 85;       
     
     /**
 	 * Store mobile detection results in the Session variable for later use
@@ -216,6 +206,7 @@ class DeviceAware
     {        
         if ( $quality == 'auto' )
         {
+            /*
             $mobileDevices = self::getSessionMobileDevicesData();
             
             if ( !$mobileDevices )
@@ -224,217 +215,13 @@ class DeviceAware
             }else{
                 if ( $mobileDevices['isMobile'] ) GD::set_default_quality(self::$mobileDeviesJPGImageQuality);
                 else GD::set_default_quality(self::$classicDeviesJPGImageQuality);
-            }
+            }*/
+            GD::set_default_quality(self::$JPGImageQuality);            
         }else{
             GD::set_default_quality($quality);
         }
         
         Session::set('deviceAwareGDJpegQualitySet', TRUE);
-    }
-    
-    
-    /**
-     * Generates resized images in relation to the configured cache setting
-     * Cache settings set through _config.php via DeviceAware::$usedResolutionRatios
-     * 
-     * @param string $targetPageClassName Object's class name to process the images from
-     * @param string|int $targetPageID Object's ID from which the images will be processed
-     * @param boolean $verbose If TRUE will ouput debug/stat infos
-     * @return void
-     */
-    public function generateDeviceSpecificCachedImages($targetPageClassName, $targetPageID, $verbose = FALSE)
-    {    
-        increase_time_limit_to(); //will probably take for ever depending on the amount of pictures
-        /*
-        $targetPageClassName = $this->owner->ClassName;
-        $targetPageID = $this->owner->ID;
-        */
-        
-        if ($verbose) echo 'Working on: '.$targetPageClassName.' #'.$targetPageID.'<br/><br/>';
-        
-        $imagesToProcess = array();        
-        $targetPageObject = DataObject::get_by_id($targetPageClassName, $targetPageID);
-                
-        //do nothing if can't find the page we are suppose to work on
-        if ( $targetPageObject )
-        {
-            if ($verbose) echo 'Building image list...'.'<br/>';
-            
-            //generate image table to process
-            if ( isset(self::$usedResolutionRatios[$targetPageClassName]) )
-            {
-
-                //fields
-                if ( isset(self::$usedResolutionRatios[$targetPageClassName]['fields']) )
-                {
-                    foreach ( self::$usedResolutionRatios[$targetPageClassName]['fields'] as $imageField => $deviceTypes )
-                    {      
-                        if ($verbose) echo 'Added: '.$imageField.' (Field)'.'<br/>';
-                        
-                        if ( $targetPageObject->$imageField )
-                        {                            
-                            array_push($imagesToProcess, array(
-                                'imageID' => $targetPageObject->$imageField,
-                                'devices' => $deviceTypes
-                            ));
-                        }
-                    }
-                }
-
-                //linked objects
-                if ( isset(self::$usedResolutionRatios[$targetPageClassName]['objects']) )
-                {
-                    foreach ( self::$usedResolutionRatios[$targetPageClassName]['objects'] as $objectClass => $objectInfos )
-                    {
-                        $objectList = DataObject::get($objectClass, $objectInfos['foreignKey'] . '=' . $targetPageID );
-                        if ( $objectList )
-                        {
-                            if ( isset(self::$usedResolutionRatios[$targetPageClassName]['objects'][$objectClass]['fields']) )
-                            {
-                                foreach ( self::$usedResolutionRatios[$targetPageClassName]['objects'][$objectClass]['fields'] as $imageField => $deviceTypes )
-                                {
-                                    if ($verbose) echo 'Added: '.$objectClass.' (Object): '.$imageField.' (Field)'.'<br/>';
-                                    
-                                    foreach ( $objectList as $object )
-                                    {
-                                        if ( $object->$imageField )
-                                        {
-                                            array_push($imagesToProcess, array(
-                                                'imageID' => $object->$imageField,
-                                                'devices' => $deviceTypes
-                                            ));
-                                        }
-                                    }                                
-                                }
-                            }
-                        }
-                    }
-                }
-
-            }
-            if ($verbose) echo 'Completed image list'.'<br/><br/>';
-            if ($verbose) flush();
-            if ($verbose) echo 'Generating images...'.'<br/>';
-            
-            //process image table
-            foreach ( $imagesToProcess as $data )
-            {
-                $imageObj = DataObject::get_by_id('Image', $data['imageID']);
-                if ( $imageObj )
-                {
-                    if ($verbose) echo '<br/>'.'Processing: '.$imageObj->Filename.'<br/>';
-                    
-                    foreach( $data['devices'] as $device => $ratioSet )
-                    {                        
-                        if ( $device == 'classic' )
-                        {
-                            //$mobileDevices['isMobile'] = FALSE;
-                            //Session::set('mobileDevices', $mobileDevices);
-                            GD::set_default_quality(self::$classicDeviesJPGImageQuality);
-                            
-                            if ($verbose) echo '<br/>'.'Classic devices: '.'<br/>';
-                            
-                            foreach( $ratioSet as $orientation => $ratios )
-                            {
-                                foreach ( self::$screenResolutions as $resolution )
-                                {
-                                    foreach ( $ratios as $ratio )
-                                    {
-                                        increase_time_limit_to(30);//try to avoid time out by resetting limit on each image processing
-                                        if ( $orientation == 'width' )
-                                        {
-                                            $resolutionRatio = $resolution[0] * $ratio;
-                                            $imageObj->getFormattedDeviceAwareImage('SetWidth', $resolutionRatio);
-                                            if ($verbose) echo 'SetWidth: '.$resolution[0].' @ '.$ratio.' = '.$resolutionRatio.'<br/>';
-                                        }else if ( $orientation == 'height' ){
-                                            $resolutionRatio = $resolution[1] * $ratio;
-                                            $imageObj->getFormattedDeviceAwareImage('SetHeight', $resolutionRatio);
-                                            if ($verbose) echo 'SetHeight: '.$resolution[1].' @ '.$ratio.' = '.$resolutionRatio.'<br/>';
-                                        }
-                                    }
-                                }
-                            }
-                        }// classic devices ratios
-                        if ($verbose) flush();
-                        
-                        if ( $device == 'mobile' )
-                        {
-                            //$mobileDevices['isMobile'] = TRUE;
-                            //Session::set('mobileDevices', $mobileDevices);
-                            GD::set_default_quality(self::$mobileDeviesJPGImageQuality);
-                            
-                            if ($verbose) echo '<br/>'.'Mobile devices: '.'<br/>';
-                            
-                            foreach( $ratioSet as $orientation => $ratios )
-                            {
-                                foreach ( self::$mobileDevicesResolutions as $device => $resolution )
-                                {
-                                    //check if device is to be cached
-                                    if ( in_array($device, self::$cachedMobileDevices) )
-                                    {
-
-                                        $resolutions = array();
-                                        if ( isset($resolution['short']) )
-                                        {
-                                            //has min/max resolutions                            
-                                            $index = 0;
-                                            foreach ( $resolution['short'] as $short )
-                                            {
-                                                array_push($resolutions, array($short, $resolution['long'][$index])); //portrait
-                                                array_push($resolutions, array($resolution['long'][$index], $short)); //landscape
-                                                $index++;
-                                            }
-
-                                            //average
-                                            array_push($resolutions, array(
-                                                ($resolution['short'][0] + $resolution['short'][1]) / 2,
-                                                ($resolution['long'][0] + $resolution['long'][1]) / 2
-                                            )); //portrait
-                                            array_push($resolutions, array(
-                                                ($resolution['long'][0] + $resolution['long'][1]) / 2,
-                                                ($resolution['short'][0] + $resolution['short'][1]) / 2
-                                            )); //landscape
-                                        }else{
-                                            //1 resolution
-                                            array_push($resolutions, array($resolution[0], $resolution[1])); //portrait
-                                            array_push($resolutions, array($resolution[0], $resolution[1])); //landscape
-                                        }
-
-                                        foreach ( $resolutions as $res )
-                                        {
-                                            foreach ( $ratios as $ratio )
-                                            {
-                                                increase_time_limit_to(30);//try to avoid time out by resetting limit on each image processing
-                                                if ( $orientation == 'width' )
-                                                {
-                                                    $resolutionRatio = $res[0] * $ratio;
-                                                    $imageObj->getFormattedDeviceAwareImage('SetWidth', $resolutionRatio);
-                                                    if ($verbose) echo 'SetWidth: '.$device.': '.$res[0].' @ '.$ratio.' = '.$resolutionRatio.'<br/>';
-                                                }else if ( $orientation == 'height' ){
-                                                    $resolutionRatio = $res[1] * $ratio;
-                                                    $imageObj->getFormattedDeviceAwareImage('SetHeight', $resolutionRatio);
-                                                    if ($verbose) echo 'SetHeight: '.$device.': '.$res[1].' @ '.$ratio.' = '.$resolutionRatio.'<br/>';
-                                                }
-                                            }
-                                        }
-
-                                    }//if device to be cahched
-                                }//loop mobile resolutions
-                            }
-                        }// mobile ratios
-                        
-                    }// loop through devices
-                    
-                }// if image object
-                if ($verbose) flush();
-            }// loop through images to cache
-            
-            if ($verbose) echo '<br/><br/>'.'Re-init Mobile Device Aware'.'<br/><br/>';
-            //re-init becuase we manual modified it earlier
-            self::initMobileDeviceAware(); 
-            
-        }//if page Object
-        if ($verbose) echo '<br/><br/>'.'Done'.'<br/><br/>';
     }
 }
 ?>

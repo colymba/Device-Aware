@@ -73,6 +73,17 @@ class DeviceAwarePage_Controller extends Extension
         return $screenResolution[0];
     }
     
+    public function screenHeight()
+    {
+        $screenResolution = Session::get('screenResolution');
+        if ( !$screenResolution )
+        {
+            $screenResolution = DeviceAware::$defaultScreenResolution;
+        }
+        
+        return $screenResolution[1];
+    }
+    
     public function isUsingDefaultResolution()
     {
         $screenResolution = Session::get('screenResolution');
@@ -199,6 +210,20 @@ class DeviceAwarePage_Controller extends Extension
     public function getWidthFromScreenRatio($ratio = 1)
     {
         return $this->screenWidth() * $ratio;
+    }
+    
+    //-------------------------------------------------------------------------
+    
+    public function screenHeight1000Plus()
+    {
+        if ( $this->screenHeight() >= 1000 ) return TRUE;
+        else return FALSE;
+    }
+    
+    public function screenHeight900Plus()
+    {
+        if ( $this->screenHeight() >= 900 ) return TRUE;
+        else return FALSE;
     }
 }
 ?>
