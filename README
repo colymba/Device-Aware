@@ -1,8 +1,15 @@
 ------------------------------------------------------
-Device Aware v0.1
+Device Aware v0.2 (29 Jan. 2012)
 SilverStripe module
-by Thierry Francois : colmyba.com
+by Thierry Francois : colymba.com
 ------------------------------------------------------
+
+------------------------------------------------------
+ABOUT
+------------------------------------------------------
+This extension was developed for the needs of responsive layouts
+where image sizes would vary with the user's screen resolution.
+
 
 ------------------------------------------------------
 DETAILS
@@ -10,7 +17,7 @@ DETAILS
 Adds mobile functionlaities:
 - detection
 - template functions
-- resolutions
+- resolutions 'database'
 
 Device resolution tools
 - default device resolution (classic and mobile)
@@ -35,5 +42,47 @@ Add/remove extensions as required
 Reset defaults if required
 Set cache config
 
+------------------------------------------------------
+EXAMPLES
+------------------------------------------------------
+Template code example with sample usage of templates functions
 
-...Full manual in a bit...
+------------------------------------------------------
+<% if isMobile %>
+                                                    
+    <% control Image %>      
+        <% if Orientation = 2 %>
+            <img <% control deviceOptimizedImageWidthByRatio(0.95) %>src="$URL"<% end_control %> alt="$Name" />
+        <% else %>
+            <img <% control SetHeight(550) %>src="$URL"<% end_control %> alt="$Name" />
+        <% end_if %>
+    <% end_control %>
+
+<% else %>      
+    
+    <% if Image.isLandscape %>
+    
+        <% if screenWidth1600Plus %>                                                                                                                                    
+            <img <% control Image.deviceOptimizedImageWidthByRatio(0.6) %>src="$URL"<% end_control %> alt="$Name" />                                                                
+        <% else %>                                                      
+            <img <% control Image.deviceOptimizedImageWidthByRatio(0.7) %>src="$URL"<% end_control %> alt="$Name" />
+        <% end_if %>
+    
+    <% else %>
+    
+        <% if screenHeight1000Plus %>                                                                                              
+            <img <% control Image.SetHeight(700) %>src="$URL"<% end_control %> alt="$Name" /> 
+        <% else %>                                                                                            
+            <img <% control Image.SetHeight(550) %>src="$URL"<% end_control %> alt="$Name" />
+        <% end_if %>   
+    
+    <% end_if %>
+
+<% end_if %>  
+
+------------------------------------------------------
+<% if Orientation = 2 %>
+    <img <% control Image.deviceOptimizedImageHeightByWidthRatio(0.266) %>src="$URL"<% end_control %> alt="$Name" /> 
+<% else %>
+    <img <% control Image.deviceOptimizedImageWidthByRatio(0.266) %>src="$URL"<% end_control %> alt="$Name" /> 
+<% end_if %>

@@ -10,7 +10,6 @@
  * 
  * @copyright Thierry Francois / COLYMBA 
  * @author thierry@colymba.com
- * @version 0.01
  * 
  * @requires MobileBrowserDetector by Silverstripe
  */

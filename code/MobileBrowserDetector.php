@@ -3,7 +3,7 @@
  * @package DeviceAware * 
  * @author Silverstripe Ltd
  * 
- * @note Added MSIE fake positive fix
+ * @note Added MSIE fake positive fix (@colymba)
  */
 
 /**

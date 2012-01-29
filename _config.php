@@ -12,7 +12,6 @@
  * 
  * @copyright Thierry Francois / COLYMBA 
  * @author thierry@colymba.com
- * @version 0.01
  * 
  * @requires DeviceAware
  */
@@ -75,7 +74,7 @@ DeviceAwareCache::$imageCacheSettings = array(
                 array('P', 0.102, 1680, 'W'),
                 array('S', 0.102, 1680, 'W'),
                 array('L', 0.102, 1680, 'H'), 
-                /*               
+                               
                 array('P', 0.1498, 1440, 'W'),
                 array('S', 0.1498, 1440, 'W'),
                 array('L', 0.1498, 1440, 'H'),
@@ -95,7 +94,7 @@ DeviceAwareCache::$imageCacheSettings = array(
                 
                 array('P', 0.266, 960, 'W'),
                 array('S', 0.266, 960, 'W'),
-                array('L', 0.266, 960, 'H')   */             
+                array('L', 0.266, 960, 'H')             
             )
         ),
         'objects' => array(
@@ -105,7 +104,7 @@ DeviceAwareCache::$imageCacheSettings = array(
                         // imageOrientation, ratio/pixelSize, screenResolution, imageDirectionToResize
                         
                         // Classic devices
-                        /*array('L', 0.6, 1920, 'W'),
+                        array('L', 0.6, 1920, 'W'),
                         array('L', 0.6, 1680, 'W'),
                         array('L', 0.7, 1440, 'W'),
                         array('L', 0.7, 1280, 'W'),
@@ -114,7 +113,7 @@ DeviceAwareCache::$imageCacheSettings = array(
                         array('P', '700', 0, 'H'),
                         array('P', '550', 0, 'H'),
                         array('S', '700', 0, 'H'),
-                        array('S', '550', 0, 'H'),*/
+                        array('S', '550', 0, 'H'),
                         
                         // Mobile
                         array('P', '550', 0, 'H'),
