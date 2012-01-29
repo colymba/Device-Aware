@@ -16,7 +16,9 @@
  */
 class DeviceAwareDev_Controller extends Controller
 {
-    //put your code here
+    /**
+     * Check permission before executing anything
+     */    
     function init()
     {
 		parent::init();
@@ -31,25 +33,52 @@ class DeviceAwareDev_Controller extends Controller
 		if(!$canAccess) return Security::permissionFailure($this);
     }
     
+    /**
+     * Perform a (re)build or image cache for a specific Page object or a whole class
+     * @param mixed set through URL parameters: 'device_aware/dev/build/$Class/$ID'
+     * $Class string classname to be processes
+     * $ID int|string page ID to be process or 'all' to process all published pages of $Class
+     */
     public function build()
     {
-        echo 'Device Aware cache building...'.'<br/><br/>';
+        echo 'Device Aware cache building...'.'<br/>';
+        echo 'Can take a very long time, refresh the page if you get a timeout error.'.'<br/><br/>';
         
         //print_r(Director::URLParam('Class') . ': ' . Director::URLParam('ID'));
         $className = Director::URLParam('Class');
         $classID = Director::URLParam('ID');
         
-        //if URLParams use this        
-        //DeviceAware::generateDeviceSpecificCachedImages($className, $classID, TRUE);
-        DeviceAwareCache::$verbose = TRUE;
-        DeviceAwareCache::generateCache($className, $classID);
-        DeviceAwareCache::$verbose = FALSE;
-        
-        //get config
-        //loop though classes
-        //get all objectsfor each classes
-        //send obj 1 by 1 to:
-        //DeviceAware::generateDeviceSpecificCachedImage($targetClass, $targetClassID);
+        if (!$className)
+        {
+            echo 'No Class name specified. Please use URL parameters.';
+        }else{
+            if (!$classID)
+            {
+                echo 'No Class ID specified. Please use URL parameters.';
+            }else{
+                if ( $classID == 'all' )
+                {
+                    //process all published pages of classname $className
+                    $pages = DataObject::get($className, "`SiteTree`.Status = 'Published'");
+                    if ($pages)
+                    {
+                        DeviceAwareCache::$verbose = TRUE;
+                        foreach ($pages as $page)
+                        {
+                            DeviceAwareCache::generateCache($className, $page->ID);
+                        }
+                        DeviceAwareCache::$verbose = FALSE;
+                    }else{
+                        echo 'Nothing published for '.$className.' yet.';
+                    }
+                }else{
+                    //process one page only specified by $className + $classID
+                    DeviceAwareCache::$verbose = TRUE;
+                    DeviceAwareCache::generateCache($className, $classID);
+                    DeviceAwareCache::$verbose = FALSE;
+                }
+            }   
+        }
     }
 }
 
